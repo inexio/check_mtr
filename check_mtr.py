@@ -1,15 +1,6 @@
 import argparse
 import json
-import socket
 import subprocess
-
-
-def check_ip(name):
-    ip4 = socket.gethostbyname(name)
-    if ip4 == name:
-        return True
-    else:
-        return False
 
 
 def parse_hops(hops: str):
