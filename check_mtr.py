@@ -77,12 +77,12 @@ def parse_cli():
 
 
 def get_mtr_values(host):
-    out = subprocess.check_output(['mtr', '-j', host])
-    return json.loads(out)
+    # out = subprocess.check_output(['mtr', '-j', host])
+    return {}
 
 
 def check_mtr_values(expected_hops, expected_ping, expected_loss, mtr_res):
-    res = mtr_res["report"]["hubs"]
+    # res = mtr_res["report"]["hubs"]
 
     # Check latency
     if expected_ping is not None:
@@ -101,19 +101,23 @@ def check_mtr_values(expected_hops, expected_ping, expected_loss, mtr_res):
     # Check hops
     current_hops = 0
     for hop in expected_hops:
-        if type(hop) is list:
-            if type(current_hops) is int:
+        if type(hop) == range:
+            if type(current_hops) == int:
                 current_hops = [x + current_hops for x in hop]
-            if type(current_hops) is list:
-                length_before = len(current_hops)
+            elif type(current_hops) == list:
+                new_hops = []
                 for i in range(len(hop)):
-                    current_hops.append(current_hops[length_before-1] + hop[i])
-        if type(hop) is int:
-            if type(current_hops) is int:
+                    for j in range(len(current_hops)):
+                        summing = hop[i] + current_hops[j]
+                        if summing not in new_hops:
+                            new_hops.append(summing)
+                current_hops = new_hops
+        if type(hop) == int:
+            if type(current_hops) == int:
                 current_hops += hop
-            if type(current_hops) is list:
+            elif type(current_hops) == list:
                 current_hops = [x + hop for x in current_hops]
-        if type(hop) is dict:
+        if type(hop) == dict:
             pass
             # TODO Check if hop is on one of the possible hops
 
