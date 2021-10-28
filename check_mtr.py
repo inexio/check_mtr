@@ -14,7 +14,7 @@ def check_ip(name):
 
 def parse_hops(hops: str):
     parsed_hops = []
-    hops_list = hops.split(";")
+    hops_list = hops.split(",")
     for i in range(len(hops_list)):
         # Wildcard section
         if hops_list[i].startswith("*"):
@@ -33,10 +33,7 @@ def parse_hops(hops: str):
                 exit(3)
         # Hostname/IP section
         else:
-            if check_ip(hops_list[i]):
-                parsed_hops.append({"type": "Ip", "value": hops_list[i]})
-            else:
-                parsed_hops.append({"type": "Hostname", "value": hops_list[i]})
+            parsed_hops.append({"type": "Ip", "value": hops_list[i]})
     return parsed_hops
 
 
@@ -77,26 +74,26 @@ def parse_cli():
 
 
 def get_mtr_values(host):
-    # out = subprocess.check_output(['mtr', '-j', host])
-    return {}
+    out = subprocess.check_output(['mtr', '-j', host])
+    return json.loads(out)
 
 
 def check_mtr_values(expected_hops, expected_ping, expected_loss, mtr_res):
-    # res = mtr_res["report"]["hubs"]
+    res = mtr_res["report"]["hubs"]
 
     # Check latency
     if expected_ping is not None:
         for node in res:
             if float(node["Avg"]) > float(expected_ping):
                 print("CRITICAL - Latency was higher than the maximum expected value!")
-                exit(3)
+                exit(2)
 
     # Check packet loss
     if expected_loss is not None:
         for node in res:
             if float(node["Loss%"]) > float(expected_loss):
                 print("CRITICAL - Packet loss was higher than the maximum expected value!")
-                exit(3)
+                exit(2)
 
     # Check hops
     current_hops = 0
@@ -118,8 +115,24 @@ def check_mtr_values(expected_hops, expected_ping, expected_loss, mtr_res):
             elif type(current_hops) == list:
                 current_hops = [x + hop for x in current_hops]
         if type(hop) == dict:
-            pass
-            # TODO Check if hop is on one of the possible hops
+            found = False
+            if type(current_hops) == list:
+                for hop_number in current_hops:
+                    if hop_number >= len(res):
+                        break
+                    if res[hop_number]["host"] == hop["value"]:
+                        current_hops = hop_number + 1
+                        found = True
+                        break
+                if not found:
+                    print("CRITICAL - The expected hops did not match with the mtr hops!")
+                    exit(2)
+            elif type(current_hops) == int:
+                if res[current_hops]["host"] != hop["value"]:
+                    print("CRITICAL - The expected hops did not match with the mtr hops!")
+                    exit(2)
+                current_hops += 1
+
 
 def main():
     hops, ping, loss, host = parse_cli()
