@@ -8,6 +8,9 @@ def parse_hops(hops: str):
     hops_list = hops.split(",")
     for i in range(len(hops_list)):
         # Wildcard section
+        if hops_list[i] == "*":
+            parsed_hops.append("*")
+            continue
         if hops_list[i].startswith("*"):
             current_hop = hops_list[i][1:]
             current_hop = current_hop.split("-")
@@ -89,6 +92,15 @@ def check_mtr_values(expected_hops, expected_ping, expected_loss, mtr_res):
     # Check hops
     current_hops = 0
     for hop in expected_hops:
+        print(current_hops)
+        # Wildcard
+        if type(hop) == str and hop == "*":
+            if type(current_hops) == list:
+                start = current_hops[0]
+            else:
+                start = current_hops
+            current_hops = [x for x in range(start, len(res))]
+        # Wildcard range
         if type(hop) == range:
             if type(current_hops) == int:
                 current_hops = [x + current_hops for x in hop]
@@ -100,11 +112,13 @@ def check_mtr_values(expected_hops, expected_ping, expected_loss, mtr_res):
                         if summing not in new_hops:
                             new_hops.append(summing)
                 current_hops = new_hops
+        # Wildcard static value
         if type(hop) == int:
             if type(current_hops) == int:
                 current_hops += hop
             elif type(current_hops) == list:
                 current_hops = [x + hop for x in current_hops]
+        # Hostname/Ip
         if type(hop) == dict:
             found = False
             if type(current_hops) == list:
