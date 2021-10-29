@@ -92,7 +92,6 @@ def check_mtr_values(expected_hops, expected_ping, expected_loss, mtr_res):
     # Check hops
     current_hops = 0
     for hop in expected_hops:
-        print(current_hops)
         # Wildcard
         if type(hop) == str and hop == "*":
             if type(current_hops) == list:
