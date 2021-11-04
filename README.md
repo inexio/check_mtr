@@ -1,7 +1,7 @@
 # check_mtr
 
 Check_mtr is a Nagios compatible monitoring plugin written in Python. It compares values retrieved from mtr, 
-like average latency and package loss, to the expected values given with the CLI. If any value does not meet the
+like average latency and package loss, to the expected values given to the script by the CLI. If any value does not meet the
 expectations it returns CRITICAL (exit code 2).
 
 There are three different values that the plugin is able to check. Every value has a different CLI option. If the option
@@ -24,7 +24,7 @@ The latency and packet loss must be smaller than the maximum expected value for 
 The routing path is checked by looking at the routing regex and then decide whether the regex matches the actual
 routing path (returned by mtr) or not.
 
-###Example:
+### Example:
 ```shell
 python3 check_mtr.py -H example.com -l 100 -p 5 -j "*1-5,12.13.14.15,*1,123.124.125.126"
 ```
@@ -42,7 +42,7 @@ The routing regex can be build by the following rules:
 2. \*1 = One unspecified router address may follow
 3. \*1-3 = One to three unspecified router addresses may follow
 
-You are also able to simply hardcode exxpected routes by only using router addresses concatenated
+You are also able to simply hardcode expected routes by only using router addresses concatenated
 with ","
 
 
