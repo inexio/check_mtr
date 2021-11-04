@@ -37,7 +37,7 @@ The routing regex can be build by the following rules:
 
 **A router address can be an IP or a hostname**
 
-###Meaning of the wildcard cases:
+### Meaning of the wildcard cases:
 1. \* = Any number of unspecified router addresses may follow
 2. \*1 = One unspecified router address may follow
 3. \*1-3 = One to three unspecified router addresses may follow
