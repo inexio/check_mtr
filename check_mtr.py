@@ -31,6 +31,10 @@ def parse_hops(hops: str):
     return parsed_hops
 
 
+def parse_routers(routers: str):
+    return routers.strip("[]").replace(" ", "").split(",")
+
+
 def parse_cli():
     parser = argparse.ArgumentParser(
         description="Monitoring check plugin that compares the expected values for hops, latency and packet loss "
@@ -39,6 +43,7 @@ def parse_cli():
     parser.add_argument("-j", "--jumps", type=str, help="Expected hops/jumps")
     parser.add_argument("-l", "--latency", type=str, help="Maximum expected latency")
     parser.add_argument("-p", "--packetloss", type=str, help="Maximum expected packet loss")
+    parser.add_argument("-r", "--routers", type=str, help="Routers that should be in the routing path")
     args = parser.parse_args()
     args = args.__dict__
 
@@ -48,14 +53,16 @@ def parse_cli():
         exit(3)
 
     # No expected values given => Exit
-    if args["jumps"] is None and args["latency"] is None and args["packetloss"] is None:
-        print("UNKNOWN - At least one expectation (-H, -p, -l) must be given!")
+    if args["jumps"] is None and args["latency"] is None and args["packetloss"] is None and args["routers"] is None:
+        print("UNKNOWN - At least one expectation (-H, -p, -l, -r) must be given!")
         exit(3)
 
     # Parse values
-    hops, ping, loss = None, args["latency"], args["packetloss"]
+    hops, ping, loss, routers = None, args["latency"], args["packetloss"], None
     if args["jumps"] is not None:
         hops = parse_hops(args["jumps"])
+    if args["routers"] is not None:
+        routers = parse_routers(args["routers"])
     try:
         if ping is not None:
             ping = int(ping)
@@ -64,7 +71,7 @@ def parse_cli():
     except (ValueError, TypeError):
         print("UNKNOWN - The maximum expected latency and package loss must be integer values!")
         exit(3)
-    return hops, ping, loss, args["host"]
+    return hops, ping, loss, routers, args["host"]
 
 
 def get_mtr_values(host):
@@ -72,24 +79,7 @@ def get_mtr_values(host):
     return json.loads(out)
 
 
-def check_mtr_values(expected_hops, expected_ping, expected_loss, mtr_res):
-    res = mtr_res["report"]["hubs"]
-
-    # Check latency
-    if expected_ping is not None:
-        for node in res:
-            if float(node["Avg"]) > float(expected_ping):
-                print("CRITICAL - Latency was higher than the maximum expected value!")
-                exit(2)
-
-    # Check packet loss
-    if expected_loss is not None:
-        for node in res:
-            if float(node["Loss%"]) > float(expected_loss):
-                print("CRITICAL - Packet loss was higher than the maximum expected value!")
-                exit(2)
-
-    # Check hops
+def check_hops(expected_hops, res):
     current_hops = 0
     for hop in expected_hops:
         # Wildcard
@@ -138,10 +128,43 @@ def check_mtr_values(expected_hops, expected_ping, expected_loss, mtr_res):
                 current_hops += 1
 
 
+def check_mtr_values(expected_hops, expected_ping, expected_loss, expected_routers, mtr_res):
+    res = mtr_res["report"]["hubs"]
+
+    # Check latency
+    if expected_ping is not None:
+        for node in res:
+            if float(node["Avg"]) > float(expected_ping):
+                print("CRITICAL - Latency was higher than the maximum expected value!")
+                exit(2)
+
+    # Check packet loss
+    if expected_loss is not None:
+        for node in res:
+            if float(node["Loss%"]) > float(expected_loss):
+                print("CRITICAL - Packet loss was higher than the maximum expected value!")
+                exit(2)
+
+    # Check routers
+    if expected_routers is not None:
+        routers = []
+        for node in res:
+            routers.append(node["host"])
+        for node in expected_routers:
+            if node not in routers:
+                print("CRITICAL - One of the expected routers was not in the routing path!")
+                exit(2)
+        pass
+
+    # Check hops
+    if expected_hops is not None:
+        check_hops(expected_hops, res)
+
+
 def main():
-    hops, ping, loss, host = parse_cli()
+    hops, ping, loss, routers, host = parse_cli()
     mtr_res = get_mtr_values(host)
-    check_mtr_values(hops, ping, loss, mtr_res)
+    check_mtr_values(hops, ping, loss, routers, mtr_res)
     print("OK - All values were in the valid range")
     exit(0)
 

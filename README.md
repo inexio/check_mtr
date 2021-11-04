@@ -9,13 +9,15 @@ is given then the value will be checked, otherwise it will not be checked.
 
 ## Usage
 
-|                          Option                                 |         Description                                  |      required?              |            
-|-----------------------------------------------------------------|------------------------------------------------------|-----------------------------|
-| -h                                                              | Help                                                 | no                          |
-| -H/--host <host>                                                | The host to run mtr on                               | yes                         |
-| -j/--jumps <routing regex>                                      | The routing regex that should match the routing path | yes, if it shall be checked |
-| -l/--latency <latency>                                          | The maximum expected latency (ms)                    | yes, if it shall be checked |
-| -p/--packetloss <packet loss>                                   | The maximum expected packet loss (%)                 | yes, if it shall be checked |
+|                          Option                                 |         Description                                     |      required?              |            
+|-----------------------------------------------------------------|---------------------------------------------------------|-----------------------------|
+| -h                                                              | Help                                                    | ❌                          |
+| -H/--host <host>                                                | The host to run mtr on                                  | ✅                          |
+| -j/--jumps <routing regex>                                      | The routing regex that should match the routing path    | ❌                          |
+| -l/--latency <latency>                                          | The maximum expected latency (ms)                       | ❌                          |
+| -p/--packetloss <packet loss>                                   | The maximum expected packet loss (%)                    | ❌                          |
+| -r/--routers                                                    | The routers on the routing path (Order is unimportant)  | ❌                          |
+
 
 At least one of the options -j, -l and -p must be set, because otherwise nothing will be checked.
 In this case the script returns UNKNOWN (exit code 3).
@@ -26,7 +28,7 @@ routing path (returned by mtr) or not.
 
 ### Example:
 ```shell
-python3 check_mtr.py -H example.com -l 100 -p 5 -j "*1-5,12.13.14.15,*1,123.124.125.126"
+python3 check_mtr.py -H example.com -l 100 -p 5 -j "*1-5,12.13.14.15,*1,123.124.125.126" -r "[123.124.125.126, 12.13.14.15]"
 ```
 
 ## Routing Regex
