@@ -45,6 +45,8 @@ def parse_cli():
     parser.add_argument("-l", "--latency", type=str, help="Maximum expected latency")
     parser.add_argument("-p", "--packetloss", type=str, help="Maximum expected packet loss")
     parser.add_argument("-r", "--routers", type=str, help="Routers that should be in the routing path")
+    parser.add_argument("-4", "--ipv4", action='store_true', help="Use IPv4 for mtr")
+    parser.add_argument("-6", "--ipv6", action='store_true', help="Use IPv6 for mtr")
     args = parser.parse_args()
     args = args.__dict__
 
@@ -57,6 +59,9 @@ def parse_cli():
     if args["jumps"] is None and args["latency"] is None and args["packetloss"] is None and args["routers"] is None:
         print("UNKNOWN - At least one expectation (-H, -p, -l, -r) must be given!")
         exit(3)
+
+    # IPv4 or IPv6?
+    ip4, ip6 = args["ipv4"], args["ipv6"]
 
     # Parse values
     hops, ping, loss, routers = None, args["latency"], args["packetloss"], None
@@ -72,11 +77,14 @@ def parse_cli():
     except (ValueError, TypeError):
         print("UNKNOWN - The maximum expected latency and package loss must be integer values!")
         exit(3)
-    return hops, ping, loss, routers, args["host"]
+    return hops, ping, loss, routers, args["host"], ip4, ip6
 
 
-def get_mtr_values(host):
-    out = subprocess.check_output(['mtr', '-j', host])
+def get_mtr_values(host, ip4, ip6):
+    if (not ip4) and ip6:
+        out = subprocess.check_output(['mtr', '-j', '-6', host])
+    else:
+        out = subprocess.check_output(['mtr', '-j', '-4', host])
     return json.loads(out)
 
 
@@ -163,8 +171,8 @@ def check_mtr_values(expected_hops, expected_ping, expected_loss, expected_route
 
 
 def main():
-    hops, ping, loss, routers, host = parse_cli()
-    mtr_res = get_mtr_values(host)
+    hops, ping, loss, routers, host, ip4, ip6 = parse_cli()
+    mtr_res = get_mtr_values(host, ip4, ip6)
     check_mtr_values(hops, ping, loss, routers, mtr_res)
     print("OK - All values were in the valid range")
     exit(0)

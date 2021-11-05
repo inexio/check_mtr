@@ -17,10 +17,14 @@ is given then the value will be checked, otherwise it will not be checked.
 | -l/--latency <latency>                                          | The maximum expected latency (ms)                       | ❌                          |
 | -p/--packetloss <packet loss>                                   | The maximum expected packet loss (%)                    | ❌                          |
 | -r/--routers                                                    | The routers on the routing path (Order is unimportant)  | ❌                          |
+| -4/--ipv4                                                       | Use IPv4 to execute mtr                                 | ❌                          |
+| -6/--ipv6                                                       | Use IPv6 to execute mtr                                 | ❌                          |
 
 
 At least one of the options -j, -l and -p must be set, because otherwise nothing will be checked.
 In this case the script returns UNKNOWN (exit code 3).
+By default mtr is executed with IPv4, if you want to execute it with IPv6 add the -6/--ipv6 flag to the CLI.
+If by accident both are given, then IPv4 will be used.
 
 The latency and packet loss must be smaller than the maximum expected value for the check to be successful.
 The routing path is checked by looking at the routing regex and then decide whether the regex matches the actual
