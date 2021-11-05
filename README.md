@@ -32,16 +32,23 @@ routing path (returned by mtr) or not.
 
 ### Example:
 ```shell
-python3 check_mtr.py -H example.com -l 100 -p 5 -j "*1-5,12.13.14.15,*1,123.124.125.126" -r "[123.124.125.126, 12.13.14.15]"
+python3 check_mtr.py -H example.com -l 100 -p 5 -j "*1-5,12.13.14.15,*1,123.124.125.126[15ms:1%]" -r "[123.124.125.126, 12.13.14.15]"
 ```
 
 ## Routing Regex
 The routing regex can be build by the following rules: 
 
-1. **routing** := **routing**,**routing** | **wildcard** | \<router address\>
+1. **routing** := **routing**,**routing** | **wildcard** | \<router address\>**values**
 2. **wildcard** := * | *\<int\> | *\<int\> - \<int\>
+3. **values** := [**latency**:**package loss**] | Ɛ
+3. **latency** := \<int\> # in ms
+4. **package loss** := \<int\> # in %
 
 **A router address can be an IP or a hostname**
+
+If the latency and package loss are given after a hostname in the regex then these are the maximum values
+for latency and package loss that this host may have. If the actual values exceed these expected ones,
+the plugin will return CRITICAL.
 
 ### Meaning of the wildcard cases:
 1. \* = Any number of unspecified router addresses may follow

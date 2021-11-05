@@ -2,6 +2,7 @@
 import argparse
 import json
 import subprocess
+import re
 
 
 def parse_hops(hops: str):
@@ -28,7 +29,25 @@ def parse_hops(hops: str):
                 exit(3)
         # Hostname/IP section
         else:
-            parsed_hops.append({"type": "Ip", "value": hops_list[i]})
+            hop = hops_list[i].split("[")
+            latency, package_loss = None, None
+            if len(hop) > 1:
+                numbers = re.compile(r'\d+(?:\.\d+)?')
+                values = hop[1].split(":")
+                if len(values) != 2:
+                    print("UNKNOWN - Wrong format of hops latency/package loss!")
+                    exit(3)
+                latency = numbers.findall(values[0])
+                if len(latency) == 0:
+                    latency = None
+                else:
+                    latency = float(latency[0])
+                package_loss = numbers.findall(values[1])
+                if len(package_loss) == 0:
+                    package_loss = None
+                else:
+                    package_loss = float(package_loss[0])
+            parsed_hops.append({"type": "Ip", "value": hop[0], "latency": latency, "package_loss": package_loss})
     return parsed_hops
 
 
@@ -71,9 +90,9 @@ def parse_cli():
         routers = parse_routers(args["routers"])
     try:
         if ping is not None:
-            ping = int(ping)
+            ping = float(ping)
         if loss is not None:
-            loss = int(loss)
+            loss = float(loss)
     except (ValueError, TypeError):
         print("UNKNOWN - The maximum expected latency and package loss must be integer values!")
         exit(3)
@@ -86,6 +105,17 @@ def get_mtr_values(host, ip4, ip6):
     else:
         out = subprocess.check_output(['mtr', '-j', '-4', host])
     return json.loads(out)
+
+
+def check_hop_values(hop, real_hop):
+    if hop["latency"] is not None and hop["latency"] < real_hop["Avg"]:
+        print("CRITICAL - The latency for hop " + real_hop["host"] + " was " + str(real_hop["Avg"]) +
+              " ms, but expected was a latency smaller than " + str(hop["latency"]) + " ms!")
+        exit(2)
+    if hop["package_loss"] is not None and hop["package_loss"] < real_hop["Loss%"]:
+        print("CRITICAL - The package loss for hop " + real_hop["host"] + " was " + str(real_hop["Loss%"]) +
+              "%, but expected was a latency smaller than " + str(hop["package_loss"]) + "%!")
+        exit(2)
 
 
 def check_hops(expected_hops, res):
@@ -124,16 +154,19 @@ def check_hops(expected_hops, res):
                     if hop_number >= len(res):
                         break
                     if res[hop_number]["host"] == hop["value"]:
+                        check_hop_values(hop, res[hop_number])
                         current_hops = hop_number + 1
                         found = True
                         break
                 if not found:
-                    print("CRITICAL - The expected hops did not match with the mtr hops!")
+                    print("CRITICAL - The expected hop " + hop["value"] + " was not in the routing path!")
                     exit(2)
             elif type(current_hops) == int:
                 if res[current_hops]["host"] != hop["value"]:
-                    print("CRITICAL - The expected hops did not match with the mtr hops!")
+                    print("CRITICAL - The expected hop " + hop["value"] + " was not in the routing path!")
                     exit(2)
+                else:
+                    check_hop_values(hop, res[current_hops])
                 current_hops += 1
 
 
