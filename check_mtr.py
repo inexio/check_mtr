@@ -3,6 +3,23 @@ import argparse
 import json
 import subprocess
 import re
+import atexit
+
+
+def print_performance_data(res_mtr):
+    print("Hops:")
+    hops = res_mtr["report"]["hubs"]
+    for i in range(len(hops)-1):
+        hop = hops[i]
+        print("{}. {} {}% {} {} {} {} {} {}".format(hop["count"], hop["host"], hop["Loss%"], hop["Snt"], hop["Last"],
+                                                    hop["Avg"], hop["Best"], hop["Wrst"], hop["StDev"]))
+    hop = hops[len(hops)-1]
+    print("{}. {} {}% {} {} {} {} {} {} | ".format(hop["count"], hop["host"], hop["Loss%"], hop["Snt"], hop["Last"],
+                                                   hop["Avg"], hop["Best"], hop["Wrst"], hop["StDev"]), end="")
+    for i in range(len(hops)):
+        hop = hops[i]
+        print("'hop_{}_rta'={};; ".format(hop["host"], hop["Avg"]), end="")
+        print("'hop_{}_pl'={};; ".format(hop["host"], hop["Loss%"]), end="")
 
 
 def parse_hops(hops: str):
@@ -206,6 +223,7 @@ def check_mtr_values(expected_hops, expected_ping, expected_loss, expected_route
 def main():
     hops, ping, loss, routers, host, ip4, ip6 = parse_cli()
     mtr_res = get_mtr_values(host, ip4, ip6)
+    atexit.register(print_performance_data, mtr_res)
     check_mtr_values(hops, ping, loss, routers, mtr_res)
     print("OK - All values were in the valid range")
     exit(0)
