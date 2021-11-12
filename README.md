@@ -58,6 +58,26 @@ the plugin will return CRITICAL.
 You are also able to simply hardcode expected routes by only using router addresses concatenated
 with ","
 
+### Output + Performance Data
+The plugin outputs the mtr results for the different hops on the routing path.
+The plugin also prints out the latency (rta) and package loss (pl) as performance data.
+So the values for latency and package loss will then be shown as performance data in your monitoring system 
+after the check was executed.
+The performance data are always printed, also when the check fails.
+In the following there is an example of the output of the check plugin:
+
+```shell
+OK - All values were in the valid range
+Hops:
+1. 1.2.3.4 0.0% 10 3.234 15.401 5.308 59.167 10.101
+2. 2.3.4.5 0.0% 10 1.783 2.097 1.365 5.015 10.73
+3. 3.4.5.6 0.0% 10 4.485 4.611 4.367 5.143 0.219
+4. 4.5.6.7 0.0% 10 49.007 9.351 4.832 49.007 13.933
+5. 5.6.7.8 0.0% 10 8.936 8.999 8.766 9.104 0.111
+6. 6.7.8.9 0.0% 10 9.425 9.981 9.425 10.98 0.482
+7. 7.8.9.10 0.0% 10 8.89 8.88 8.797 8.925 0.041 | 'hop_1.2.3.4_rta'=10.401;; 'hop_1.2.3.4_pl'=0.0;; 'hop_2.3.4.5_rta'=1.097;; 'hop_2.3.4.5_pl'=0.0;; 'hop_3.4.5.6_rta'=4.611;; 'hop_3.4.5.6_pl'=0.0;; 'hop_4.5.6.7_rta'=9.351;; 'hop_4.5.6.7_pl'=0.0;; 'hop_5.6.7.8_rta'=8.999;; 'hop_5.6.7.8_pl'=0.0;; 'hop_6.7.8.9_rta'=9.981;; 'hop_6.7.8.9_pl'=0.0;; 'hop_7.8.9.10_rta'=8.88;; 'hop_7.8.9.10_pl'=0.0;;
+```
+
 
 ## Dependencies
 The script has no dependencies, all imported libraries are available from the python
